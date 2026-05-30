@@ -1,2 +1,2 @@
-# Grocery-price-tracker
-Python application that helps users track grocery prices over time, compare products across categories, and identify pricing trends using historical data.
+#Smart-Food-Nutrition-Analyzer
+A console-based Python application that helps users compare food products, check nutrition values, identify ultra-processed items, and generate health reports using Open Food Facts data.
