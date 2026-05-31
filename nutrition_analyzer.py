@@ -231,3 +231,57 @@ class NutritionAnalyzer:
                 f"Ultra-processed: {row.get('ultra_processed_percentage')}%")
         
         return "\n".join(report_lines)
+
+    def generate_full_report(self):
+        report_lines = []
+
+        report_lines.append("SMART FOOD NUTRITION ANALYZER REPORT")
+        report_lines.append("=" * 45)
+        report_lines.append(f"Total products loaded: {len(self.products)}")
+        report_lines.append(f"Total nutrition profiles loaded: {len(self.nutrition_profiles)}")
+        report_lines.append("")
+
+        sections = [("sugars_100g", "Top High-Sugar Products", "Sugar", "g"), ("energy_kcal_100g", "Top High-Calorie Products", "Calories", " kcal"), ("salt_100g", "Top High-Salt Products", "Salt", "g"), ("proteins_100g", "Top High-Protein Products", "Protein", "g")]
+
+        for field_name, title, label, unit in sections:
+            report_lines.append(title)
+            report_lines.append("=" * len(title))
+
+            results = self.sort_products_by_nutrition(field_name, limit=5)
+
+            for item in results:
+                product = item["product"]
+                value = item["value"]
+                countries = item["countries"]
+                report_lines.append(f"{product.product_name} | {label}: {round(value, 2)}{unit} | Countries: {', '.join(countries)}")
+
+            report_lines.append("")
+
+        selected_countries = ["Austria", "Sri Lanka"]
+
+        for country in selected_countries:
+            rows = self.get_country_report(country)
+            recent_rows = rows[-5:]
+            report_lines.append(self.format_trend_report(f"Country Trend: {country}", recent_rows))
+            report_lines.append("")
+
+        regions = []
+
+        for row in self.region_trends:
+            region = row.get("region", "")
+
+            if region != "" and region not in regions:
+                regions.append(region)
+
+        regions.sort()
+
+        for region in regions:
+            rows = self.get_region_report(region)
+            recent_rows = rows[-5:]
+            report_lines.append(self.format_trend_report(f"Region Trend: {region}", recent_rows))
+            report_lines.append("")
+
+        report_lines.append("Note:")
+        report_lines.append("The data comes from Open Food Facts. Because the source is crowdsourced, some values may contain outliers or entry mistakes.")
+
+        return "\n".join(report_lines)

@@ -1,0 +1,103 @@
+SMART FOOD NUTRITION ANALYZER REPORT
+=============================================
+Total products loaded: 24615
+Total nutrition profiles loaded: 24615
+
+Top High-Sugar Products
+=======================
+Sucre poudre | Sugar: 100.0g | Countries: Italy
+Brown Cane Cube Sugar | Sugar: 100.0g | Countries: Hungary
+Candy floss | Sugar: 100.0g | Countries: South Africa
+Gula Premium* | Sugar: 100.0g | Countries: Indonesia
+Levure de boulanger traditionnelle | Sugar: 100.0g | Countries: Germany
+
+Top High-Calorie Products
+=========================
+Rapsolje 1l Eldorado | Calories: 900.0 kcal | Countries: Norway
+Olej kokosowy, bezzapachowy | Calories: 900.0 kcal | Countries: Poland
+Oleor | Calories: 900.0 kcal | Countries: Morocco, United States
+Afia huile de table | Calories: 900.0 kcal | Countries: Morocco
+Aceite de oliva extra suave Borges | Calories: 900.0 kcal | Countries: New Zealand
+
+Top High-Salt Products
+======================
+Skim Milk | Salt: 100.0g | Countries: Singapore
+Sel fin | Salt: 100.0g | Countries: Belgium
+Iodised Salt | Salt: 100.0g | Countries: Denmark, Sweden
+Sea Salt | Salt: 100.0g | Countries: New Zealand
+Vegeta cutie | Salt: 100.0g | Countries: Sweden
+
+Top High-Protein Products
+=========================
+Creatine Monohydrate | Protein: 100.0g | Countries: Argentina
+Nescafe Classic Instant coffee | Protein: 100.0g | Countries: India
+CHEESE STICK | Protein: 95.56g | Countries: Colombia
+pure collagen types 1 and 3 powder | Protein: 90.91g | Countries: Indonesia
+COLLAGEN PEPTIDES | Protein: 90.48g | Countries: Ireland, United States
+
+Country Trend: Austria
+======================
+2021 | Products: 69 | Avg kcal: 262.85 | Avg sugar: 14.22g | Avg salt: 0.64g | Ultra-processed: 66.13%
+2022 | Products: 66 | Avg kcal: 315.42 | Avg sugar: 9.79g | Avg salt: 1.1g | Ultra-processed: 72.73%
+2023 | Products: 57 | Avg kcal: 285.95 | Avg sugar: 13.21g | Avg salt: 0.51g | Ultra-processed: 66.67%
+2024 | Products: 59 | Avg kcal: 294.73 | Avg sugar: 13.33g | Avg salt: 0.82g | Ultra-processed: 66%
+2025 | Products: 26 | Avg kcal: 317.96 | Avg sugar: 10.53g | Avg salt: 0.45g | Ultra-processed: 59.09%
+
+Country Trend: Sri Lanka
+========================
+2022 | Products: 16 | Avg kcal: 271.92 | Avg sugar: 15.37g | Avg salt: 3.48g | Ultra-processed: 100%
+2023 | Products: 10 | Avg kcal: 398.85 | Avg sugar: 19.45g | Avg salt: 0.72g | Ultra-processed: 80%
+2024 | Products: 26 | Avg kcal: 272.21 | Avg sugar: 16.3g | Avg salt: 9.13g | Ultra-processed: 33.33%
+2025 | Products: 57 | Avg kcal: 313.63 | Avg sugar: 20.02g | Avg salt: 3.04g | Ultra-processed: 100%
+2026 | Products: 34 | Avg kcal: 277.65 | Avg sugar: 17g | Avg salt: 1.05g | Ultra-processed: 75%
+
+Region Trend: Africa
+====================
+2022 | Products: 216 | Avg kcal: 298.28 | Avg sugar: 17.62g | Avg salt: 20.04g | Ultra-processed: 68.35%
+2023 | Products: 137 | Avg kcal: 288.34 | Avg sugar: 16.32g | Avg salt: 1.14g | Ultra-processed: 75.34%
+2024 | Products: 361 | Avg kcal: 457.7 | Avg sugar: 14.49g | Avg salt: 14.33g | Ultra-processed: 72.57%
+2025 | Products: 245 | Avg kcal: 300.73 | Avg sugar: 16.27g | Avg salt: 119.25g | Ultra-processed: 82.54%
+2026 | Products: 28 | Avg kcal: 351.98 | Avg sugar: 21.76g | Avg salt: 26.67g | Ultra-processed: 88.89%
+
+Region Trend: Asia
+==================
+2022 | Products: 606 | Avg kcal: 285.29 | Avg sugar: 14.4g | Avg salt: 1145.86g | Ultra-processed: 80.2%
+2023 | Products: 457 | Avg kcal: 288.87 | Avg sugar: 15.53g | Avg salt: 11.6g | Ultra-processed: 74.86%
+2024 | Products: 698 | Avg kcal: 291.08 | Avg sugar: 14.81g | Avg salt: 19.05g | Ultra-processed: 80.43%
+2025 | Products: 769 | Avg kcal: 293.84 | Avg sugar: 14.92g | Avg salt: 33.59g | Ultra-processed: 72.35%
+2026 | Products: 48 | Avg kcal: 253.56 | Avg sugar: 14.89g | Avg salt: 1.11g | Ultra-processed: 76.92%
+
+Region Trend: Europe
+====================
+2022 | Products: 1200 | Avg kcal: 289.37 | Avg sugar: 10.48g | Avg salt: 1.26g | Ultra-processed: 64.52%
+2023 | Products: 1194 | Avg kcal: 301.19 | Avg sugar: 12.14g | Avg salt: 0.77g | Ultra-processed: 66.33%
+2024 | Products: 1655 | Avg kcal: 315.15 | Avg sugar: 13.9g | Avg salt: 1.67g | Ultra-processed: 66.61%
+2025 | Products: 702 | Avg kcal: 312.27 | Avg sugar: 14.53g | Avg salt: 0.93g | Ultra-processed: 70.4%
+2026 | Products: 10 | Avg kcal: 329.22 | Avg sugar: 16.42g | Avg salt: 0.28g | Ultra-processed: 100%
+
+Region Trend: North America
+===========================
+2021 | Products: 160 | Avg kcal: 327.24 | Avg sugar: 11.19g | Avg salt: 0.92g | Ultra-processed: 58.45%
+2022 | Products: 123 | Avg kcal: 335.86 | Avg sugar: 12.96g | Avg salt: 2.1g | Ultra-processed: 59.14%
+2023 | Products: 107 | Avg kcal: 290.94 | Avg sugar: 12.91g | Avg salt: 0.85g | Ultra-processed: 75.64%
+2024 | Products: 156 | Avg kcal: 308.4 | Avg sugar: 14.29g | Avg salt: 9.82g | Ultra-processed: 68.48%
+2025 | Products: 84 | Avg kcal: 411.31 | Avg sugar: 19.19g | Avg salt: 15.13g | Ultra-processed: 65.96%
+
+Region Trend: Oceania
+=====================
+2022 | Products: 121 | Avg kcal: 289.53 | Avg sugar: 16.2g | Avg salt: 1.05g | Ultra-processed: 65.22%
+2023 | Products: 90 | Avg kcal: 379.99 | Avg sugar: 14.25g | Avg salt: 14.09g | Ultra-processed: 75.68%
+2024 | Products: 97 | Avg kcal: 509.23 | Avg sugar: 17.07g | Avg salt: 15.92g | Ultra-processed: 60%
+2025 | Products: 29 | Avg kcal: 381.4 | Avg sugar: 13.14g | Avg salt: 31.62g | Ultra-processed: 70.59%
+2026 | Products: 1 | Avg kcal: 348.95 | Avg sugar: 51.5g | Avg salt: 0.02g | Ultra-processed: %
+
+Region Trend: South America
+===========================
+2022 | Products: 338 | Avg kcal: 299.79 | Avg sugar: 13.77g | Avg salt: 37.87g | Ultra-processed: 62.42%
+2023 | Products: 421 | Avg kcal: 277.13 | Avg sugar: 15.47g | Avg salt: 13.35g | Ultra-processed: 74.42%
+2024 | Products: 567 | Avg kcal: 301.08 | Avg sugar: 12.88g | Avg salt: 14.72g | Ultra-processed: 69.16%
+2025 | Products: 328 | Avg kcal: 293.23 | Avg sugar: 14g | Avg salt: 24.87g | Ultra-processed: 72.78%
+2026 | Products: 8 | Avg kcal: 190.91 | Avg sugar: 8.06g | Avg salt: 12.13g | Ultra-processed: 100%
+
+Note:
+The data comes from Open Food Facts. Because the source is crowdsourced, some values may contain outliers or entry mistakes.

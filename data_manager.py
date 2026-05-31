@@ -1,6 +1,7 @@
+from datetime import datetime
 import csv
 
-from constants import (PRODUCTS_FILE, NUTRITION_FILE, PRODUCT_COUNTRIES_FILE, COUNTRY_REGIONS_FILE, COUNTRY_TRENDS_FILE, REGION_TRENDS_FILE, DATA_SOURCES_FILE)
+from constants import (PRODUCTS_FILE, NUTRITION_FILE, PRODUCT_COUNTRIES_FILE, COUNTRY_REGIONS_FILE, COUNTRY_TRENDS_FILE, REGION_TRENDS_FILE, DATA_SOURCES_FILE, REPORT_FILE, REPORT_HISTORY_FILE)
 from food_product import FoodProduct
 from nutrition_profile import NutritionProfile
 
@@ -57,3 +58,22 @@ class DataManager:
 
         return data 
 
+    def write_report(self, report_text):
+        REPORT_FILE.parent.mkdir(exist_ok=True)
+
+        with open(REPORT_FILE, "w", encoding="utf-8") as file:
+            file.write(report_text)
+
+    def append_report_history(self, report_type):
+        REPORT_HISTORY_FILE.parent.mkdir(exist_ok=True)
+
+        file_exists = REPORT_HISTORY_FILE.exists()
+
+        with open(REPORT_HISTORY_FILE, "a", encoding = "utf-8", newline= "") as file:
+            writer = csv.writer(file)
+
+            if not file_exists:
+                writer.writerow(["generated_at", "report_type"])
+            
+            writer.writerow([datetime.now().strftime("%Y-%m-%d %H:%M:%S"), report_type])
+            
