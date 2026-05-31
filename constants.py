@@ -12,14 +12,14 @@ PRODUCTS_FILE = DATA_DIR / "products_clean.csv"
 NUTRITION_FILE = DATA_DIR / "nutrition_clean.csv"
 PRODUCT_COUNTRIES_FILE = DATA_DIR / "product_countries.csv"
 COUNTRY_REGIONS_FILE = DATA_DIR / "country_regions.csv"
-COUNTRY_TRENDS_FILE = DATA_DIR / "region_year_trends.csv"
+COUNTRY_TRENDS_FILE = DATA_DIR / "country_year_trends.csv"
 REGION_TRENDS_FILE = DATA_DIR / "region_year_trends.csv"
 DATA_SOURCES_FILE = DATA_DIR / "data_sources.csv"
 
 #report files
 
 REPORT_FILE = REPORTS_DIR / "nutrition_report.txt"
-REPORT_HISTORY__FILE = REPORTS_DIR / "report_history.csv"
+REPORT_HISTORY_FILE = REPORTS_DIR / "report_history.csv"
 
 #Health warning threshold per 100g
 

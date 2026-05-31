@@ -183,4 +183,51 @@ class NutritionAnalyzer:
 
         return combined_results[:limit]
 
+    def get_country_report(self, country_name):
+        country_name = str(country_name).strip().lower()
+        results = []
+
+        if country_name == "":
+            return results
+
+        for row in self.country_trends:
+            row_country = row.get("country", "").strip().lower()
+
+            if row_country == country_name:
+                results.append(row)
+
+        return results
+
+    def get_region_report(self, region_name):
+        region_name = str(region_name).strip().lower()
+        results = []
+
+        if region_name == "":
+            return results
+
+        for row in self.region_trends:
+            row_region = row.get("region", "").strip().lower()
+
+            if row_region == region_name:
+                results.append(row)
+
+        return results
+    
+    def format_trend_report(self, title, rows):
+        if len(rows) == 0:
+            return "No trend data found."
+
+        report_lines = []
+
+        report_lines.append(title)
+        report_lines.append("=" * len(title))
+
+        for row in rows:
+            report_lines.append(                
+                f"{row.get('year')} | Products: {row.get('product_count')} | "
+                f"Avg kcal: {row.get('avg_kcal_100g')} | "
+                f"Avg sugar: {row.get('avg_sugars_100g')}g | "
+                f"Avg salt: {row.get('avg_salt_100g')}g | "
+                f"Ultra-processed: {row.get('ultra_processed_percentage')}%")
         
+        return "\n".join(report_lines)
