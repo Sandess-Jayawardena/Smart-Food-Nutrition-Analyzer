@@ -106,4 +106,30 @@ class NutritionAnalyzer:
             return None
 
         return {"first": first_product_info, "second": second_product_info}
+
+    def get_health_warning_report(self, code):
+        combined_info = self.get_combined_product_info(code)
+
+        if combined_info is None:
+            return None
+
+        product = combined_info["product"]
+        nutrition = combined_info["nutrition"]
+        countries = combined_info["countries"]
+        warnings = nutrition.get_health_warnings()
+        
+        report_lines = []
+
+        report_lines.append("HEALTH WARNING REPORT")
+        report_lines.append("=" * 40)
+        report_lines.append(product.display_product())
+        report_lines.append(nutrition.display_nutrition())
+        report_lines.append(f"Countries: {', '.join(countries)}")
+        report_lines.append("")
+        report_lines.append("Warnings:")
+
+        for warning in warnings:
+            report_lines.append(f"- {warning}")
+
+        return "\n".join(report_lines)       
         
