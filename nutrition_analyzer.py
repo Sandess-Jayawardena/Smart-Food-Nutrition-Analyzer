@@ -77,3 +77,23 @@ class NutritionAnalyzer:
                 count = count + 1
 
         return count
+    
+    def search_products(self, search_text, limit=10):
+        search_text = str(search_text).strip()
+
+        results = []
+
+        if search_text == "":
+            return results
+
+        for product in self.products:
+            if product.matches_search(search_text):
+                combined_info = self.get_combined_product_info(product.code)
+
+                if combined_info is not None:
+                    results.append(combined_info)
+
+                if len(results) >= limit:
+                    break
+
+        return results
