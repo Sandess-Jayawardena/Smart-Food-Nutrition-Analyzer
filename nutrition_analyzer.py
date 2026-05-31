@@ -97,3 +97,13 @@ class NutritionAnalyzer:
                     break
 
         return results
+
+    def compare_products(self, first_code, second_code):
+        first_product_info = self.get_combined_product_info(first_code)
+        second_product_info = self.get_combined_product_info(second_code)
+
+        if first_product_info is None or second_product_info is None:
+            return None
+
+        return {"first": first_product_info, "second": second_product_info}
+        
