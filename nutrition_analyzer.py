@@ -131,5 +131,56 @@ class NutritionAnalyzer:
         for warning in warnings:
             report_lines.append(f"- {warning}")
 
-        return "\n".join(report_lines)       
+        return "\n".join(report_lines)
+
+    def is_valid_nutrition_value(self, field_name, value):
+        if value is None:
+            return False
+
+        valid_ranges = {
+            "energy_kcal_100g": (0, 900),
+            "sugars_100g": (0, 100),
+            "fat_100g": (0, 100),
+            "salt_100g": (0, 100),
+            "proteins_100g": (0, 100),
+            "nutriscore_score": (-15, 40),
+            "nova_group": (1, 4),
+        }
+
+        if field_name not in valid_ranges:
+            return False
+
+        minimum_value, maximum_value = valid_ranges[field_name]
+
+        return minimum_value <= value <= maximum_value    
+
+    def sort_products_by_nutrition(self, field_name, limit=10):
+        combined_results = []
+
+        allowed_fields = [
+            "energy_kcal_100g", "sugars_100g", "fat_100g", "salt_100g", "proteins_100g", "nutriscore_score", "nova_group"]
+
+        if field_name not in allowed_fields:
+            return combined_results
+
+        for product in self.products:
+            nutrition = self.get_nutrition_by_code(product.code)
+
+            if nutrition is None:
+                continue
+
+            value = getattr(nutrition, field_name)
+
+            if self.is_valid_nutrition_value(field_name, value):
+                combined_results.append({
+                    "product": product,
+                    "nutrition": nutrition,
+                    "value": value,
+                    "countries": self.get_countries_for_product(product.code)
+                })
+
+        combined_results.sort(key=lambda item: item["value"], reverse=True)
+
+        return combined_results[:limit]
+
         
