@@ -5,6 +5,7 @@ class NutritionProfile(BaseRecord):
 
     def __init__(self, code, energy_kcal_100g, sugars_100g, fat_100g, salt_100g, proteins_100g, nutriscore_grade, nutriscore_score, nova_group):
         super().__init__(code)
+        # CSV values arrive as strings, so numeric fields are converted to floats.
         self.energy_kcal_100g = self.to_float(energy_kcal_100g)
         self.sugars_100g = self.to_float(sugars_100g)
         self.fat_100g = self.to_float(fat_100g)
@@ -22,6 +23,7 @@ class NutritionProfile(BaseRecord):
         except ValueError:
             return None
 
+    # Warning checks compare nutrition values with the limits in constants.py.
     def is_high_sugar(self):
         return self.sugars_100g is not None and self.sugars_100g > HIGH_SUGAR_LIMIT
 
@@ -34,6 +36,7 @@ class NutritionProfile(BaseRecord):
     def is_high_calorie(self):
         return self.energy_kcal_100g is not None and self.energy_kcal_100g > HIGH_CALORIE_LIMIT
     
+    # NOVA group 4 means ultra-processed food.
     def is_ultra_processed(self):
         return self.nova_group == 4
 

@@ -2,12 +2,14 @@ from pathlib import Path
 
 #folders
 
+# pathlib helps build file paths that work across operating systems.
 BASE_DIR = Path(__file__).parent
 DATA_DIR = BASE_DIR / "data"
 REPORTS_DIR = BASE_DIR / "reports"
 
 #data files
 
+# Constants keep CSV paths and warning limits in one place.
 PRODUCTS_FILE = DATA_DIR / "products_clean.csv"
 NUTRITION_FILE = DATA_DIR / "nutrition_clean.csv"
 PRODUCT_COUNTRIES_FILE = DATA_DIR / "product_countries.csv"

@@ -3,6 +3,7 @@ from nutrition_analyzer import NutritionAnalyzer
 from constants import EXIT_OPTION
 
 def display_menu():
+    # Console menu shown after each action.
     print("\nSMART FOOD NUTRITION ANALYZER")
     print("=" * 35)
     print("1. Load data")
@@ -38,9 +39,24 @@ def load_program_data():
 
     return data_manager, analyzer
 
+def get_result_limit():
+    # input() returns text, so int() converts it to a number.
+    try:
+        limit = int(input("How many results do you want to show? ").strip())
+    except ValueError:
+        # try/except handles letters or empty input without crashing.
+        return 10
+
+    if limit < 1:
+        return 10
+
+    return limit
+
 def search_products(analyzer):
+    # User input is read as a string and stripped of extra spaces.
     search_text = input("Enter product name, brand, or category: ").strip()
-    results = analyzer.search_products(search_text, limit=10)
+    limit = get_result_limit()
+    results = analyzer.search_products(search_text, limit)
 
     if len(results) == 0:
         print("\nNo products found.")
@@ -132,9 +148,10 @@ def sort_products(analyzer):
         return
 
     field_name = field_map[choice]
-    results = analyzer.sort_products_by_nutrition(field_name, limit=10)
+    limit = get_result_limit()
+    results = analyzer.sort_products_by_nutrition(field_name, limit)
 
-    print(f"\nTop 10 products by {label_map[field_name]}")
+    print(f"\nTop {limit} products by {label_map[field_name]}")
     print("=" * 50)
 
     for item in results:
@@ -177,12 +194,14 @@ def main():
 
     while True:
         display_menu()
+        # The menu choice is also string input from the console.
         choice = input("Enter your choice: ").strip()
 
         if choice == "1":
             data_manager, analyzer = load_program_data()
 
         elif choice == "2":
+            # Menu features need loaded data before using the analyzer.
             if analyzer is None:
                 print("\nPlease load the data first.")
             else:
@@ -219,6 +238,7 @@ def main():
                 show_region_report(analyzer)
 
         elif choice == "8":
+            # Export needs both the analyzer and data manager.
             if analyzer is None or data_manager is None:
                 print("\nPlease load the data first.")
             else:

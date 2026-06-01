@@ -1,5 +1,6 @@
 from base_record import BaseRecord
 
+# FoodProduct inherits the shared code field from BaseRecord.
 class FoodProduct(BaseRecord):
 
     def __init__(self, code, product_name, brands, main_category, created_year):
@@ -17,6 +18,7 @@ class FoodProduct(BaseRecord):
         except ValueError:
             return None
         
+    # Check product name, brand, and category for the search text.
     def matches_search(self, search_text):
         search_text = search_text.lower()
 

@@ -14,6 +14,7 @@ class NutritionAnalyzer:
         self.create_lookups()
     
     def create_lookups(self):
+        # Lookup dictionaries give fast access instead of searching every list.
         for product in self.products:
             self.product_lookup[product.code] = product
 
@@ -60,6 +61,7 @@ class NutritionAnalyzer:
         return []
 
     def get_combined_product_info(self, code):
+        # Product code links product details, nutrition values, and countries.
         product = self.get_product_by_code(code)
         nutrition = self.get_nutrition_by_code(code)
         countries = self.get_countries_for_product(code)
@@ -137,6 +139,7 @@ class NutritionAnalyzer:
         if value is None:
             return False
 
+        # Filter unrealistic nutrition values and likely data-entry mistakes.
         valid_ranges = {
             "energy_kcal_100g": (0, 900),
             "sugars_100g": (0, 100),
@@ -184,6 +187,7 @@ class NutritionAnalyzer:
         return combined_results[:limit]
 
     def get_country_report(self, country_name):
+        # Country trend reports filter trend rows by country name.
         country_name = str(country_name).strip().lower()
         results = []
 
@@ -199,6 +203,7 @@ class NutritionAnalyzer:
         return results
 
     def get_region_report(self, region_name):
+        # Region trend reports filter trend rows by region name.
         region_name = str(region_name).strip().lower()
         results = []
 
@@ -243,6 +248,7 @@ class NutritionAnalyzer:
 
         sections = [("sugars_100g", "Top High-Sugar Products", "Sugar", "g"), ("energy_kcal_100g", "Top High-Calorie Products", "Calories", " kcal"), ("salt_100g", "Top High-Salt Products", "Salt", "g"), ("proteins_100g", "Top High-Protein Products", "Protein", "g")]
 
+        # Nested loop: each section has several top products inside it.
         for field_name, title, label, unit in sections:
             report_lines.append(title)
             report_lines.append("=" * len(title))
