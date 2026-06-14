@@ -39,6 +39,39 @@ class NutritionProfile(BaseRecord):
     # NOVA group 4 means ultra-processed food.
     def is_ultra_processed(self):
         return self.nova_group == 4
+    
+    def calculate_risk_score(self):
+        """Calculate a simple nutrition risk score from the product warnings."""
+        score = 0
+
+        if self.is_high_sugar():
+            score = score + 2
+
+        if self.is_high_fat():
+            score = score + 1
+
+        if self.is_high_salt():
+            score = score + 2
+
+        if self.is_high_calorie():
+            score = score + 1
+
+        if self.is_ultra_processed():
+            score = score + 2
+
+        return score
+
+    def get_risk_level(self):
+        """Convert the risk score into a clear risk level."""
+        score = self.calculate_risk_score()
+
+        if score <= 1:
+            return "Low risk"
+
+        if score <= 4:
+            return "Medium risk"
+
+        return "High risk"
 
     def get_health_warnings(self):
         warnings = []
@@ -56,7 +89,7 @@ class NutritionProfile(BaseRecord):
             warnings.append("High calorie")
 
         if self.is_ultra_processed():
-            warnings.append("Ultra processed")
+            warnings.append("Ultra-processed")
 
         if len(warnings) == 0:
             warnings.append("No major warnings")
@@ -64,4 +97,9 @@ class NutritionProfile(BaseRecord):
         return warnings
     
     def display_nutrition(self):
-        return (f"{self.code} | {self.energy_kcal_100g} kcal | {self.sugars_100g}g sugar | {self.salt_100g}g salt | Nutri-Score {self.nutriscore_grade} | NOVA {self.nova_group}")
+        """Return a readable one-line nutrition summary."""
+        calories = "Unknown" if self.energy_kcal_100g is None else f"{self.energy_kcal_100g} kcal"
+        sugar = "Unknown" if self.sugars_100g is None else f"{self.sugars_100g}g sugar"
+        salt = "Unknown" if self.salt_100g is None else f"{self.salt_100g}g salt"
+
+        return f"{self.code} | {calories} | {sugar} | {salt} | Nutri-Score {self.nutriscore_grade} | NOVA {self.nova_group} | Risk score {self.calculate_risk_score()} | {self.get_risk_level()}"

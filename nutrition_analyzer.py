@@ -72,6 +72,9 @@ class NutritionAnalyzer:
         return {"product": product, "nutrition": nutrition, "countries": countries}
 
     def count_combined_products(self):
+        """
+
+        """
         count = 0
 
         for product in self.products:
@@ -101,6 +104,7 @@ class NutritionAnalyzer:
         return results
 
     def compare_products(self, first_code, second_code):
+        """Compare two products by loading their combined product information."""
         first_product_info = self.get_combined_product_info(first_code)
         second_product_info = self.get_combined_product_info(second_code)
 
@@ -110,6 +114,7 @@ class NutritionAnalyzer:
         return {"first": first_product_info, "second": second_product_info}
 
     def get_health_warning_report(self, code):
+        """Create a readable health warning report for one selected product."""
         combined_info = self.get_combined_product_info(code)
 
         if combined_info is None:
@@ -119,7 +124,7 @@ class NutritionAnalyzer:
         nutrition = combined_info["nutrition"]
         countries = combined_info["countries"]
         warnings = nutrition.get_health_warnings()
-        
+
         report_lines = []
 
         report_lines.append("HEALTH WARNING REPORT")
@@ -127,13 +132,15 @@ class NutritionAnalyzer:
         report_lines.append(product.display_product())
         report_lines.append(nutrition.display_nutrition())
         report_lines.append(f"Countries: {', '.join(countries)}")
+        report_lines.append(f"Risk score: {nutrition.calculate_risk_score()}")
+        report_lines.append(f"Risk level: {nutrition.get_risk_level()}")
         report_lines.append("")
         report_lines.append("Warnings:")
 
         for warning in warnings:
             report_lines.append(f"- {warning}")
 
-        return "\n".join(report_lines)
+        return "\n".join(report_lines)        
 
     def is_valid_nutrition_value(self, field_name, value):
         if value is None:
@@ -265,7 +272,7 @@ class NutritionAnalyzer:
 
         selected_countries = ["Austria", "Sri Lanka"]
 
-        for country in selected_countries:
+        for country in not selected_countries:
             rows = self.get_country_report(country)
             recent_rows = rows[-5:]
             report_lines.append(self.format_trend_report(f"Country Trend: {country}", recent_rows))
