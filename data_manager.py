@@ -1,7 +1,7 @@
 from datetime import datetime
 import csv
 
-from constants import (PRODUCTS_FILE, NUTRITION_FILE, PRODUCT_COUNTRIES_FILE, COUNTRY_REGIONS_FILE, COUNTRY_TRENDS_FILE, REGION_TRENDS_FILE, DATA_SOURCES_FILE, REPORT_FILE, REPORT_HISTORY_FILE)
+from constants import (PRODUCTS_FILE, NUTRITION_FILE, PRODUCT_COUNTRIES_FILE, COUNTRY_REGIONS_FILE, COUNTRY_TRENDS_FILE, REGION_TRENDS_FILE, DATA_SOURCES_FILE, REPORT_FILE, REPORT_HISTORY_FILE, PROFILE_FILE)
 from food_product import FoodProduct
 from nutrition_profile import NutritionProfile
 
@@ -83,4 +83,43 @@ class DataManager:
                 writer.writerow(["generated_at", "report_type"])
             
             writer.writerow([datetime.now().strftime("%Y-%m-%d %H:%M:%S"), report_type])
+
+    def save_profile(self, profile):
+        """Save one user nutrition profile to the profiles CSV file."""
+        try:
+            PROFILE_FILE.parent.mkdir(exist_ok=True)
+            file_exists = PROFILE_FILE.exists()
+            fieldnames = ["profile_name", "country", "region", "max_sugar", "include_ultra_processed", "result_limit"]
+
+            with open(PROFILE_FILE, "a", encoding="utf-8", newline="") as file:
+                writer = csv.DictWriter(file, fieldnames=fieldnames)
+
+                if not file_exists:
+                    writer.writeheader()
+
+                writer.writerow(profile)
+
+            return True
+        except (OSError, csv.Error, ValueError) as error:
+            print(f"Could not save profile: {error}")
+            return False
+
+    def read_profiles(self):
+        """Read saved user nutrition profiles from the profiles CSV file."""
+        profiles = []
+
+        if not PROFILE_FILE.exists():
+            return profiles
+
+        try:
+            with open(PROFILE_FILE, "r", encoding="utf-8-sig") as file:
+                reader = csv.DictReader(file)
+
+                for row in reader:
+                    profiles.append(row)
+        except (OSError, csv.Error, UnicodeError) as error:
+            print(f"Could not read profiles: {error}")
+            return []
+
+        return profiles
             

@@ -13,7 +13,9 @@ def display_menu():
     print("5. Sort products by nutrition value")
     print("6. View country trend report")
     print("7. View region trend report")
-    print("8. Export full report")
+    print("8. Create or select user nutrition profile")
+    print("9. Find products using selected profile")
+    print("10. Export full report")
     print("0. Exit")
 
 def load_program_data():
@@ -45,12 +47,159 @@ def get_result_limit():
         limit = int(input("How many results do you want to show? ").strip())
     except ValueError:
         # try/except handles letters or empty input without crashing.
+        print("Invalid number. Using 10.")
         return 10
 
     if limit < 1:
+        print("The result limit must be at least 1. Using 10.")
         return 10
 
+    if limit > 50:
+        print("The result limit is too high. Using 50.")
+        return 50
+
     return limit
+
+def get_float_input(prompt, default_value):
+    """Read a decimal number or return a default value."""
+    value = input(prompt).strip()
+
+    if value == "":
+        print(f"No number entered. Using {default_value}.")
+        return default_value
+
+    try:
+        number = float(value)
+    except ValueError:
+        print(f"Invalid number. Using {default_value}.")
+        return default_value
+
+    if number < 0:
+        print(f"The number cannot be negative. Using {default_value}.")
+        return default_value
+
+    return number
+
+def get_yes_no_input(prompt):
+    """Read a yes or no answer."""
+    while True:
+        answer = input(prompt).strip().lower()
+
+        if answer == "yes" or answer == "y" or answer == "true" or answer == "1":
+            return "yes"
+
+        if answer == "no" or answer == "n" or answer == "false" or answer == "0" or answer == "":
+            return "no"
+
+        print("Invalid answer. Please enter yes or no.")
+
+def create_profile(data_manager):
+    """Create and save a simple user nutrition profile."""
+    profile_name = input("Enter profile name: ").strip()
+
+    if profile_name == "":
+        profile_name = "Default profile"
+
+    profile = {
+        "profile_name": profile_name,
+        "country": input("Enter country, or leave blank: ").strip(),
+        "region": input("Enter region, or leave blank: ").strip(),
+        "max_sugar": get_float_input("Enter maximum sugar per 100g: ", 22.5),
+        "include_ultra_processed": get_yes_no_input("Include ultra-processed products? (yes/no): "),
+        "result_limit": get_result_limit()
+    }
+
+    print("\nProfile name:", profile["profile_name"])
+    print("Country:", profile["country"])
+    print("Region:", profile["region"])
+    print("Maximum sugar:", profile["max_sugar"])
+    print("Include ultra-processed:", profile["include_ultra_processed"])
+    print("Result limit:", profile["result_limit"])
+
+    save_profile = get_yes_no_input("Save this profile? (yes/no): ")
+
+    if save_profile == "no":
+        print("Profile was not saved.")
+        return None
+
+    if data_manager.save_profile(profile):
+        print("\nProfile saved.")
+        return profile
+
+    return None
+
+def choose_profile(data_manager):
+    """Show saved profiles and return the selected profile."""
+    profiles = data_manager.read_profiles()
+
+    if len(profiles) == 0:
+        print("\nNo saved profiles exist.")
+        return None
+
+    while True:
+        print("\nSaved profiles:")
+
+        for index, profile in enumerate(profiles, start=1):
+            print(f"{index}. {profile.get('profile_name', 'Unknown')} | Country: {profile.get('country', '')} | Region: {profile.get('region', '')} | Max sugar: {profile.get('max_sugar', 'Unknown')}g")
+
+        try:
+            choice = int(input("Choose a profile number, or 0 to cancel: ").strip())
+        except ValueError:
+            print("\nInvalid number. Please choose a profile number or 0.")
+            continue
+
+        if choice == 0:
+            print("\nProfile selection cancelled.")
+            return None
+
+        if choice < 1 or choice > len(profiles):
+            print("\nProfile number out of range. Please try again.")
+            continue
+
+        return profiles[choice - 1]
+
+def manage_profile(data_manager):
+    """Create a new profile or select a saved profile."""
+    while True:
+        print("\nPROFILE MENU")
+        print("1. Create a new profile")
+        print("2. Select an existing profile")
+        print("0. Cancel")
+        choice = input("Choose 1, 2, or 0: ").strip()
+
+        if choice == "1":
+            return create_profile(data_manager)
+
+        if choice == "2":
+            return choose_profile(data_manager)
+
+        if choice == "0":
+            print("Profile selection cancelled.")
+            return None
+
+        print("Invalid option. Please type 1, 2, or 0.")
+
+def find_products_for_selected_profile(analyzer, selected_profile):
+    """Find and display products using the selected profile."""
+    if selected_profile is None:
+        print("Please create or select a profile first.")
+        return
+
+    search_text = input("Enter product name, brand, or category: ").strip()
+
+    if search_text == "":
+        print("\nSearch text cannot be empty.")
+        return
+
+    results = analyzer.find_products_for_profile(search_text, selected_profile)
+
+    if len(results) == 0:
+        print("\nNo products matched your search and profile preferences. Try a different search or profile.")
+        return
+
+    print(f"\nProfile results found: {len(results)}")
+    print("=" * 50)
+    display_numbered_results(results)
 
 def display_numbered_results(results):
     """Display product search results with numbers so the user can choose easily."""
@@ -279,65 +428,82 @@ def export_full_report(data_manager, analyzer):
 def main():
     data_manager = None
     analyzer = None
+    selected_profile = None
 
     while True:
         display_menu()
         # The menu choice is also string input from the console.
         choice = input("Enter your choice: ").strip()
 
-        if choice == "1":
-            data_manager, analyzer = load_program_data()
+        try:
+            if choice == "1":
+                data_manager, analyzer = load_program_data()
 
-        elif choice == "2":
-            # Menu features need loaded data before using the analyzer.
-            if analyzer is None:
-                print("\nPlease load the data first.")
+            elif choice == "2":
+                # Menu features need loaded data before using the analyzer.
+                if analyzer is None:
+                    print("\nPlease load the data first.")
+                else:
+                    search_products(analyzer)
+
+            elif choice == "3":
+                if analyzer is None:
+                    print("\nPlease load the data first.")
+                else:
+                    compare_products(analyzer)
+
+            elif choice == "4":
+                if analyzer is None:
+                    print("\nPlease load the data first.")
+                else:
+                    show_health_warning_report(analyzer)
+
+            elif choice == "5":
+                if analyzer is None:
+                    print("\nPlease load the data first.")
+                else:
+                    sort_products(analyzer)
+
+            elif choice == "6":
+                if analyzer is None:
+                    print("\nPlease load the data first.")
+                else:
+                    show_country_report(analyzer)
+
+            elif choice == "7":
+                if analyzer is None:
+                    print("\nPlease load the data first.")
+                else:
+                    show_region_report(analyzer)
+
+            elif choice == "8":
+                if analyzer is None or data_manager is None:
+                    print("\nPlease load the data first.")
+                else:
+                    selected_profile = manage_profile(data_manager)
+
+            elif choice == "9":
+                if analyzer is None or data_manager is None:
+                    print("\nPlease load the data first.")
+                else:
+                    find_products_for_selected_profile(analyzer, selected_profile)
+
+            elif choice == "10":
+                # Export needs both the analyzer and data manager.
+                if analyzer is None or data_manager is None:
+                    print("\nPlease load the data first.")
+                else:
+                    export_full_report(data_manager, analyzer)
+
+            elif choice == EXIT_OPTION:
+                print("\nThank you for using Smart Food Nutrition Analyzer. Goodbye!")
+                break
+
             else:
-                search_products(analyzer)
-
-        elif choice == "3":
-            if analyzer is None:
-                print("\nPlease load the data first.")
-            else:
-                compare_products(analyzer)
-
-        elif choice == "4":
-            if analyzer is None:
-                print("\nPlease load the data first.")
-            else:
-                show_health_warning_report(analyzer)
-
-        elif choice == "5":
-            if analyzer is None:
-                print("\nPlease load the data first.")
-            else:
-                sort_products(analyzer)
-
-        elif choice == "6":
-            if analyzer is None:
-                print("\nPlease load the data first.")
-            else:
-                show_country_report(analyzer)
-
-        elif choice == "7":
-            if analyzer is None:
-                print("\nPlease load the data first.")
-            else:
-                show_region_report(analyzer)
-
-        elif choice == "8":
-            # Export needs both the analyzer and data manager.
-            if analyzer is None or data_manager is None:
-                print("\nPlease load the data first.")
-            else:
-                export_full_report(data_manager, analyzer)
-
-        elif choice == EXIT_OPTION:
-            print("\nThank you for using Smart Food Nutrition Analyzer. Goodbye!")
-            break
-
-        else:
-            print("\nInvalid choice. Please enter a number from the menu.")
+                print("\nInvalid choice. Please enter a number from the menu.")
+        except Exception as error:
+            print("\nSomething went wrong, but the program will continue.")
+            print(f"Error: {error}")
 
 
 if __name__ == "__main__":

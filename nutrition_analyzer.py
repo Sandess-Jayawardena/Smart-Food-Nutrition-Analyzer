@@ -103,6 +103,69 @@ class NutritionAnalyzer:
 
         return results
 
+    def find_products_for_profile(self, search_text, profile):
+        """Find products that match a saved user nutrition profile."""
+        if not isinstance(profile, dict):
+            profile = {}
+
+        try:
+            max_sugar = float(profile.get("max_sugar", 100))
+        except (ValueError, TypeError):
+            max_sugar = 100
+
+        try:
+            result_limit = int(profile.get("result_limit", 10))
+        except (ValueError, TypeError):
+            result_limit = 10
+
+        if result_limit < 1:
+            result_limit = 10
+
+        country_filter = str(profile.get("country", "") or "").strip().lower()
+        region_filter = str(profile.get("region", "") or "").strip().lower()
+        include_ultra_processed = str(profile.get("include_ultra_processed", "no") or "no").strip().lower()
+        search_results = self.search_products(search_text, len(self.products))
+        filtered_results = []
+
+        for item in search_results:
+            nutrition = item["nutrition"]
+            countries = item["countries"]
+
+            if country_filter != "":
+                country_match = False
+
+                for country in countries:
+                    if country.strip().lower() == country_filter:
+                        country_match = True
+
+                if not country_match:
+                    continue
+
+            if region_filter != "":
+                region_match = False
+
+                for country in countries:
+                    region = self.region_lookup.get(country, "")
+
+                    if region.strip().lower() == region_filter:
+                        region_match = True
+
+                if not region_match:
+                    continue
+
+            if nutrition.sugars_100g is None or nutrition.sugars_100g > max_sugar:
+                continue
+
+            if include_ultra_processed == "no" or include_ultra_processed == "false":
+                if nutrition.is_ultra_processed():
+                    continue
+
+            filtered_results.append(item)
+
+        filtered_results.sort(key=lambda item: item["nutrition"].calculate_risk_score())
+
+        return filtered_results[:result_limit]
+
     def compare_products(self, first_code, second_code):
         """Compare two products by loading their combined product information."""
         first_product_info = self.get_combined_product_info(first_code)

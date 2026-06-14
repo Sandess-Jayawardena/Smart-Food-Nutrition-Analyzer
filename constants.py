@@ -22,6 +22,7 @@ DATA_SOURCES_FILE = DATA_DIR / "data_sources.csv"
 
 REPORT_FILE = REPORTS_DIR / "nutrition_report.txt"
 REPORT_HISTORY_FILE = REPORTS_DIR / "report_history.csv"
+PROFILE_FILE = REPORTS_DIR / "profiles.csv"
 
 #Health warning threshold per 100g
 
