@@ -1,46 +1,102 @@
-# Smart Food Nutrition Analyzer
+Smart Food Nutrition Analyzer
 
-Smart Food Nutrition Analyzer is a Python console app that helps users make healthier food choices. It searches products, compares nutrition risk scores, uses personal nutrition profiles, saves decision reports, tracks report history, shows country and region trends, and creates trend line charts.
+A console-based Python app for searching, comparing, and analysing food nutrition data.
 
-## Run
+The program loads food data from CSV files and lets users search products, compare nutrition values, check warnings, create a simple nutrition profile, and track their searches over time.
 
-```powershell
-py main.py
-```
+Features
+Load food and nutrition data from CSV files
+Search products by name, brand, or category
+Compare two products
+Check product nutrition warnings
+Show top products by calories, sugar, salt, fat, or protein
+View country nutrition trends
+View region nutrition trends
+Create and select a nutrition profile
+Search products using a selected profile
+Track searches, comparisons, warning checks, and profile searches over time
+Generate tracking graphs with Matplotlib
+Main Menu
+1. Load food dataset
+2. Search products
+3. Compare two products
+4. Check product warnings
+5. Show top products
+6. Country trends
+7. Region trends
+8. Profile
+9. Profile search
+10. Tracking
+0. Exit
+Requirements
 
-Load the food dataset from the main menu before using the analysis features.
+Python 3 is required.
 
-## Matplotlib
+Matplotlib is used for graph creation:
 
-Install Matplotlib to generate trend line charts:
-
-```powershell
 py -3 -m pip install matplotlib
-```
+How to Run
 
-## Main Features
+Open the project folder in a terminal and run:
 
-* Product search
-* Product comparison
-* Health warning report
-* Risk score and risk level
-* User nutrition profiles
-* Profile-based product finder
-* Nutrition decision report
-* Report history tracking
-* Country and region trends
-* Matplotlib trend chart
+py -3 main.py
 
-## Files Read
+Load the food dataset from the menu before using the other features.
 
-The app reads the CSV files in the `data` folder for products, nutrition values, countries, regions, and yearly trends.
+Project Structure
+Smart-Food-Nutrition-Analyzer/
+│
+├── main.py
+├── constants.py
+├── base_record.py
+├── food_product.py
+├── nutrition_profile.py
+├── data_manager.py
+├── nutrition_analyzer.py
+│
+├── data/
+│   ├── products_clean.csv
+│   ├── nutrition_clean.csv
+│   ├── product_countries.csv
+│   ├── country_regions.csv
+│   ├── country_year_trends.csv
+│   ├── region_year_trends.csv
+│   └── data_sources.csv
+│
+└── reports/
+    ├── profiles.csv
+    └── tracking_history.csv
+Data Files
 
-## Files Written
+The app reads food and nutrition data from the data folder.
 
-* `reports/profiles.csv`
-* `reports/report_history.csv`
-* `reports/nutrition_decision_report.txt`
-* `reports/trend_line_chart.png`
+The app writes saved profiles and tracking history to the reports folder.
 
+Generated graph files are created when option 10 is used:
 
-Open Food Facts data is crowdsourced, so some nutrition values may be missing or unusual.
+reports/check_type_tracking_bar_chart.png
+reports/risk_score_tracking_line_chart.png
+
+These graph files are generated automatically and are not included in the repository.
+
+Tracking
+
+Option 10 shows tracking over time.
+
+It tracks:
+
+normal searches
+product comparisons
+warning checks
+profile searches
+
+It also tracks average risk score over time and saves the data in:
+
+reports/tracking_history.csv
+Risk Score
+
+The risk score is a simple project calculation based on available nutrition data.
+
+It considers calories, sugar, fat, salt, protein, and NOVA processing group.
+
+The score is only for project use and is not medical advice.
