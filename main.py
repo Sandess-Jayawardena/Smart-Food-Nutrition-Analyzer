@@ -1,509 +1,616 @@
+import sys
+from collections import Counter, defaultdict
+from datetime import datetime, timedelta
+
+from constants import CHECK_TYPE_CHART_FILE, RISK_SCORE_CHART_FILE
 from data_manager import DataManager
 from nutrition_analyzer import NutritionAnalyzer
-from constants import EXIT_OPTION
 
-def display_menu():
-    # Console menu shown after each action.
-    print("\nSMART FOOD NUTRITION ANALYZER")
-    print("=" * 35)
-    print("1. Load data")
-    print("2. Search products")
-    print("3. Compare two products")
-    print("4. View health warning report")
-    print("5. Sort products by nutrition value")
-    print("6. View country trend report")
-    print("7. View region trend report")
-    print("8. Create or select user nutrition profile")
-    print("9. Find products using selected profile")
-    print("10. Export full report")
-    print("0. Exit")
+MENU = [
+    "1. Load food dataset",
+    "2. Search products",
+    "3. Compare two products",
+    "4. Check product warnings",
+    "5. Show top products",
+    "6. Country trends",
+    "7. Region trends",
+    "8. Profile",
+    "9. Profile search",
+    "10. Tracking",
+    "0. Exit"
+]
 
-def load_program_data():
-    data_manager = DataManager()
-    missing_files = data_manager.check_data_files()
+# Some product names contain international characters, so use UTF-8 when the
+# current terminal supports changing its output encoding.
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
 
-    if len(missing_files) > 0:
-        print("\nMissing data files:")
 
-        for file_name in missing_files:
-            print(f" - {file_name}")
-
-        return None, None
-
-    data = data_manager.load_all_data()
-
-    analyzer = NutritionAnalyzer(data["products"], data["nutrition"], data["product_countries"], data["country_regions"], data["country_trends"], data["region_trends"])
-
-    print("\nData loaded successfully.")
-    print(f"Products loaded: {len(data['products'])}")
-    print(f"Nutrition profiles loaded: {len(data['nutrition'])}")
-    print(f"Combined products: {analyzer.count_combined_products()}")
-
-    return data_manager, analyzer
-
-def get_result_limit():
-    # input() returns text, so int() converts it to a number.
+def ask_text(prompt, default=""):
+    """Read text without crashing when automated input ends."""
     try:
-        limit = int(input("How many results do you want to show? ").strip())
-    except ValueError:
-        # try/except handles letters or empty input without crashing.
-        print("Invalid number. Using 10.")
-        return 10
+        return input(prompt).strip()
+    except EOFError:
+        return default
 
-    if limit < 1:
-        print("The result limit must be at least 1. Using 10.")
-        return 10
 
-    if limit > 50:
-        print("The result limit is too high. Using 50.")
-        return 50
-
-    return limit
-
-def get_float_input(prompt, default_value):
-    """Read a decimal number or return a default value."""
-    value = input(prompt).strip()
-
-    if value == "":
-        print(f"No number entered. Using {default_value}.")
-        return default_value
-
+def ask_number(prompt, default, number_type=float, minimum=0, maximum=None):
+    """Read a number and use a safe default when it is invalid."""
     try:
-        number = float(value)
+        number = number_type(ask_text(prompt, str(default)))
     except ValueError:
-        print(f"Invalid number. Using {default_value}.")
-        return default_value
+        print(f"Invalid number. Using {default}.")
+        return default
 
-    if number < 0:
-        print(f"The number cannot be negative. Using {default_value}.")
-        return default_value
+    if number < minimum:
+        print(f"Number is too small. Using {default}.")
+        return default
+    if maximum is not None and number > maximum:
+        print(f"Number is too large. Using {maximum}.")
+        return maximum
 
     return number
 
-def get_yes_no_input(prompt):
-    """Read a yes or no answer."""
+
+def ask_menu_choice():
+    """Read the main menu choice as an integer from 0 to 10."""
     while True:
-        answer = input(prompt).strip().lower()
-
-        if answer == "yes" or answer == "y" or answer == "true" or answer == "1":
-            return "yes"
-
-        if answer == "no" or answer == "n" or answer == "false" or answer == "0" or answer == "":
-            return "no"
-
-        print("Invalid answer. Please enter yes or no.")
-
-def create_profile(data_manager):
-    """Create and save a simple user nutrition profile."""
-    profile_name = input("Enter profile name: ").strip()
-
-    if profile_name == "":
-        profile_name = "Default profile"
-
-    profile = {
-        "profile_name": profile_name,
-        "country": input("Enter country, or leave blank: ").strip(),
-        "region": input("Enter region, or leave blank: ").strip(),
-        "max_sugar": get_float_input("Enter maximum sugar per 100g: ", 22.5),
-        "include_ultra_processed": get_yes_no_input("Include ultra-processed products? (yes/no): "),
-        "result_limit": get_result_limit()
-    }
-
-    print("\nProfile name:", profile["profile_name"])
-    print("Country:", profile["country"])
-    print("Region:", profile["region"])
-    print("Maximum sugar:", profile["max_sugar"])
-    print("Include ultra-processed:", profile["include_ultra_processed"])
-    print("Result limit:", profile["result_limit"])
-
-    save_profile = get_yes_no_input("Save this profile? (yes/no): ")
-
-    if save_profile == "no":
-        print("Profile was not saved.")
-        return None
-
-    if data_manager.save_profile(profile):
-        print("\nProfile saved.")
-        return profile
-
-    return None
-
-def choose_profile(data_manager):
-    """Show saved profiles and return the selected profile."""
-    profiles = data_manager.read_profiles()
-
-    if len(profiles) == 0:
-        print("\nNo saved profiles exist.")
-        return None
-
-    while True:
-        print("\nSaved profiles:")
-
-        for index, profile in enumerate(profiles, start=1):
-            print(f"{index}. {profile.get('profile_name', 'Unknown')} | Country: {profile.get('country', '')} | Region: {profile.get('region', '')} | Max sugar: {profile.get('max_sugar', 'Unknown')}g")
-
         try:
-            choice = int(input("Choose a profile number, or 0 to cancel: ").strip())
+            choice = int(ask_text("\nType a number: "))
         except ValueError:
-            print("\nInvalid number. Please choose a profile number or 0.")
+            print("\nPlease enter a number from 0 to 10.")
             continue
 
-        if choice == 0:
-            print("\nProfile selection cancelled.")
-            return None
+        if 0 <= choice <= 10:
+            return choice
 
-        if choice < 1 or choice > len(profiles):
-            print("\nProfile number out of range. Please try again.")
-            continue
+        print("\nPlease enter a number from 0 to 10.")
 
-        return profiles[choice - 1]
 
-def manage_profile(data_manager):
-    """Create a new profile or select a saved profile."""
+def ask_choice(prompt, choices, default="0"):
+    """Keep asking until the user enters one allowed choice."""
     while True:
-        print("\nPROFILE MENU")
-        print("1. Create a new profile")
-        print("2. Select an existing profile")
-        print("0. Cancel")
-        choice = input("Choose 1, 2, or 0: ").strip()
+        choice = ask_text(prompt, default)
 
-        if choice == "1":
-            return create_profile(data_manager)
+        if choice in choices:
+            return choice
 
-        if choice == "2":
-            return choose_profile(data_manager)
+        print("Please type one of the numbers shown.")
 
-        if choice == "0":
-            print("Profile selection cancelled.")
-            return None
 
-        print("Invalid option. Please type 1, 2, or 0.")
+def show_menu():
+    """Print the main program menu."""
+    print("\nSMART FOOD NUTRITION ANALYZER\n")
 
-def find_products_for_selected_profile(analyzer, selected_profile):
-    """Find and display products using the selected profile."""
-    if selected_profile is None:
-        print("Please create or select a profile first.")
-        return
+    for line in MENU:
+        print(line)
 
-    search_text = input("Enter product name, brand, or category: ").strip()
 
-    if search_text == "":
-        print("\nSearch text cannot be empty.")
-        return
+def data_is_loaded(analyzer):
+    """Check that the food data is ready before an analysis option runs."""
+    if analyzer is None:
+        print("\nPlease load the food dataset first.")
+        return False
 
-    results = analyzer.find_products_for_profile(search_text, selected_profile)
+    return True
 
-    if len(results) == 0:
-        print("\nNo products matched your search and profile preferences. Try a different search or profile.")
-        return
 
-    print(f"\nProfile results found: {len(results)}")
-    print("=" * 50)
-    display_numbered_results(results)
+def show_value(value, unit=""):
+    """Format a nutrition value or show Unknown when data is missing."""
+    return "Unknown" if value is None else f"{value}{unit}"
 
-def display_numbered_results(results):
-    """Display product search results with numbers so the user can choose easily."""
-    for index, item in enumerate(results, start=1):
-        product = item["product"]
-        nutrition = item["nutrition"]
-        countries = item["countries"]
-        calories = "Unknown" if nutrition.energy_kcal_100g is None else f"{nutrition.energy_kcal_100g} kcal"
-        sugar = "Unknown" if nutrition.sugars_100g is None else f"{nutrition.sugars_100g}g"
-        salt = "Unknown" if nutrition.salt_100g is None else f"{nutrition.salt_100g}g"
 
-        print(f"{index}. {product.product_name}")
-        print(f"   Code: {product.code}")
-        print(f"   Brand: {product.brands}")
-        print(f"   Calories: {calories} | Sugar: {sugar} | Salt: {salt}")
-        print(f"   Risk: {nutrition.calculate_risk_score()} | {nutrition.get_risk_level()}")
-        print(f"   Countries: {', '.join(countries)}")
-        print("-" * 50)
+def selected_profile_name(profile):
+    """Return the selected profile name for automatic tracking."""
+    if profile is None:
+        return "Without profile"
 
-def select_product_from_search(analyzer, prompt, excluded_code=None):
-    """Let the user search for a product and select one result by number."""
-    while True:
-        search_text = input(prompt).strip()
+    return profile.get("profile_name", "Without profile")
 
-        if search_text == "0":
-            print("\nCancelled.")
-            return None
 
-        results = analyzer.search_products(search_text, limit=10)
+def tracking_result(results):
+    """Return the lowest-risk product and average risk."""
+    if not results:
+        return "", 0
 
-        if excluded_code is not None:
-            results = [item for item in results if item["product"].code != excluded_code]
+    risks = [item["nutrition"].calculate_food_risk_score() for item in results]
+    best = min(results, key=lambda item: item["nutrition"].calculate_food_risk_score())
+    return best["product"].product_name, round(sum(risks) / len(risks), 2)
 
-        if len(results) == 0:
-            print("\nNo products found. Try a shorter word or check the spelling.")
-            print("Type 0 to cancel.")
-            continue
 
-        print("\nChoose one product:")
-        print("=" * 50)
-        display_numbered_results(results)
+def load_all_food_data():
+    """Load all required CSV data and create the nutrition analyzer."""
+    data_manager = DataManager()
+    missing = data_manager.check_data_files()
 
-        try:
-            choice = int(input("Enter the product number, or 0 to search again: ").strip())
-        except ValueError:
-            print("\nInvalid number. Please type one of the numbers shown.")
-            continue
+    if missing:
+        print("\nMissing data files:")
 
-        if choice == 0:
-            print("\nSearch again.")
-            continue
+        # List every missing file so the user knows what must be restored.
+        for file_name in missing:
+            print(f"- {file_name}")
 
-        if choice < 1 or choice > len(results):
-            print("\nChoice out of range. Please choose one of the numbers shown.")
-            continue
+        return data_manager, None
 
-        return results[choice - 1]   
+    data = data_manager.load_all_data()
+    analyzer = NutritionAnalyzer(
+        data["products"],
+        data["nutrition"],
+        data["product_countries"],
+        data["country_regions"],
+        data["country_trends"],
+        data["region_trends"]
+    )
+    print("\nFood dataset loaded.")
+    print(f"Products: {len(data['products'])}")
+    print(f"Products with nutrition: {analyzer.count_combined_products()}")
+    return data_manager, analyzer
 
-def search_products(analyzer):
-    """Search products and display matching nutrition details."""
-    search_text = input("Enter product name, brand, or category: ").strip()
-    limit = get_result_limit()
-    results = analyzer.search_products(search_text, limit)
 
-    if len(results) == 0:
+def show_product_details(item, number=None):
+    """Print the main product and nutrition details for one result."""
+    product = item["product"]
+    nutrition = item["nutrition"]
+    heading = f"{number}. " if number is not None else ""
+    print(f"{heading}{product.product_name}")
+    print(f"   Code: {product.code} | Brand: {product.brands}")
+    print(
+        f"   Calories: {show_value(nutrition.energy_kcal_100g, ' kcal')} | "
+        f"Sugar: {show_value(nutrition.sugars_100g, 'g')} | "
+        f"Salt: {show_value(nutrition.salt_100g, 'g')}"
+    )
+    print(f"   Risk: {nutrition.calculate_food_risk_score()} | {nutrition.get_food_risk_level()}")
+    print(f"   Countries: {', '.join(item['countries'])}")
+
+
+def show_product_results(results):
+    """Print all product results in a numbered list."""
+    if not results:
         print("\nNo products found.")
         return
 
-    print(f"\nSearch results found: {len(results)}")
-    print("=" * 50)
-    display_numbered_results(results)
-    
-def compare_products(analyzer):
-    """Search for two products and compare their nutrition values."""
-    print("\nFirst product")
-    first = select_product_from_search(analyzer, "Search for the first product: ")
+    print(f"\nProducts found: {len(results)}")
+
+    for number, item in enumerate(results, start=1):
+        show_product_details(item, number)
+
+
+def choose_product_from_results(analyzer, prompt, excluded_code=None):
+    """Search, show matches, and return one chosen product."""
+    while True:
+        search_text = ask_text(prompt, "0")
+
+        if search_text == "0":
+            return None
+
+        results = analyzer.search_products(search_text, 10)
+
+        if excluded_code:
+            results = [item for item in results if item["product"].code != excluded_code]
+
+        if not results:
+            print("No products found. Try again or type 0 to cancel.")
+            continue
+
+        show_product_results(results)
+        choices = [str(number) for number in range(len(results) + 1)]
+        choice = ask_choice("Choose product number (0 to search again): ", choices)
+
+        if choice == "0":
+            continue
+
+        selected = results[int(choice) - 1]
+        selected["search_text"] = search_text
+        return selected
+
+
+def search_and_show_products(data_manager, analyzer, profile):
+    """Search for products, display them, and save one tracking row."""
+    search_text = ask_text("Enter product name, brand, or category: ")
+    limit = ask_number("How many results: ", 10, int, 1, 50)
+    results = analyzer.search_products(search_text, limit)
+    show_product_results(results)
+
+    best_product, average_risk = tracking_result(results)
+    first_product = results[0]["product"].product_name if results else ""
+    data_manager.save_tracking_row(
+        "normal search",
+        selected_profile_name(profile),
+        search_text,
+        first_product,
+        "",
+        len(results),
+        best_product,
+        average_risk
+    )
+
+
+def compare_two_products(data_manager, analyzer, profile):
+    """Let the user choose two products and recommend the lower-risk one."""
+    first = choose_product_from_results(analyzer, "Enter first product: ")
 
     if first is None:
         return
 
-    print("\nSecond product")
-    second = select_product_from_search(analyzer, "Search for the second product: ", first["product"].code)
+    second = choose_product_from_results(
+        analyzer,
+        "Enter second product: ",
+        first["product"].code
+    )
 
     if second is None:
         return
 
-    comparison = analyzer.compare_products(first["product"].code, second["product"].code)
-
-    if comparison is None:
-        print("\nOne or both products were not found.")
-        return
+    # The recommendation is based on the same risk score shown to the user.
+    first_risk = first["nutrition"].calculate_food_risk_score()
+    second_risk = second["nutrition"].calculate_food_risk_score()
+    best = first if first_risk <= second_risk else second
 
     print("\nPRODUCT COMPARISON")
-    print("=" * 50)
+    show_product_details(first)
+    print()
+    show_product_details(second)
 
-    print("\nProduct 1:")
-    print(comparison["first"]["product"].display_product())
-    print(comparison["first"]["nutrition"].display_nutrition())
-    print(f"Countries: {', '.join(comparison['first']['countries'])}")
-
-    print("\nProduct 2:")
-    print(comparison["second"]["product"].display_product())
-    print(comparison["second"]["nutrition"].display_nutrition())
-    print(f"Countries: {', '.join(comparison['second']['countries'])}")
-
-    first_product = comparison["first"]["product"]
-    first_nutrition = comparison["first"]["nutrition"]
-    second_product = comparison["second"]["product"]
-    second_nutrition = comparison["second"]["nutrition"]
-    first_risk = first_nutrition.calculate_risk_score()
-    second_risk = second_nutrition.calculate_risk_score()
-    first_sugar = "Unknown" if first_nutrition.sugars_100g is None else f"{first_nutrition.sugars_100g}g"
-    second_sugar = "Unknown" if second_nutrition.sugars_100g is None else f"{second_nutrition.sugars_100g}g"
-    first_salt = "Unknown" if first_nutrition.salt_100g is None else f"{first_nutrition.salt_100g}g"
-    second_salt = "Unknown" if second_nutrition.salt_100g is None else f"{second_nutrition.salt_100g}g"
-
-    print("\nQUICK DECISION")
-    print("=" * 50)
-    print(f"Product 1 risk score: {first_risk}")
-    print(f"Product 2 risk score: {second_risk}")
-    print(f"Product 1 sugar: {first_sugar}")
-    print(f"Product 2 sugar: {second_sugar}")
-    print(f"Product 1 salt: {first_salt}")
-    print(f"Product 2 salt: {second_salt}")
-
-    if first_risk < second_risk:
-        print(f"Recommendation: {first_product.product_name} has the lower risk score.")
-    elif second_risk < first_risk:
-        print(f"Recommendation: {second_product.product_name} has the lower risk score.")
+    if first_risk == second_risk:
+        print("\nResult: Both products have the same risk score.")
     else:
-        print("Recommendation: Both products have the same risk score.")
+        print(f"\nResult: {best['product'].product_name} has the lower risk score.")
 
-def show_health_warning_report(analyzer):
-    """Search for one product and show its health warning report."""
-    selected = select_product_from_search(analyzer, "Search for the product you want to check: ")
+    data_manager.save_tracking_row(
+        "comparison",
+        selected_profile_name(profile),
+        f"{first['search_text']} / {second['search_text']}",
+        first["product"].product_name,
+        second["product"].product_name,
+        2,
+        best["product"].product_name,
+        round((first_risk + second_risk) / 2, 2)
+    )
+
+
+def check_one_product_warnings(data_manager, analyzer, profile):
+    """Show nutrition warnings for one selected product and track the check."""
+    selected = choose_product_from_results(analyzer, "Enter product name, brand, or category: ")
 
     if selected is None:
         return
 
-    code = selected["product"].code
-    report = analyzer.get_health_warning_report(code)
+    nutrition = selected["nutrition"]
+    print("\nNUTRITION WARNING")
+    show_product_details(selected)
+    print("\nNutrition notes:")
 
-    if report is None:
-        print("\nProduct not found.")
-    else:
-        print("\n" + report)
+    for note in nutrition.get_health_warnings():
+        print(f"- {note}")
+
+    risk = nutrition.calculate_food_risk_score()
+    data_manager.save_tracking_row(
+        "warning check",
+        selected_profile_name(profile),
+        selected["search_text"],
+        selected["product"].product_name,
+        "",
+        1,
+        selected["product"].product_name,
+        risk
+    )
 
 
-def sort_products(analyzer):
-    print("\nSort by:")
-    print("1. Calories")
-    print("2. Sugar")
-    print("3. Fat")
-    print("4. Salt")
-    print("5. Protein")
-    print("6. Nutri-Score")
-    print("7. NOVA group")
-
-    choice = input("Choose a sorting option: ").strip()
-
-    field_map = {
-        "1": "energy_kcal_100g",
-        "2": "sugars_100g",
-        "3": "fat_100g",
-        "4": "salt_100g",
-        "5": "proteins_100g",
-        "6": "nutriscore_score",
-        "7": "nova_group"
+def show_top_nutrition_products(analyzer):
+    """Show products with the highest value for a chosen nutrition field."""
+    options = {
+        "1": ("Calories", "energy_kcal_100g"),
+        "2": ("Sugar", "sugars_100g"),
+        "3": ("Salt", "salt_100g"),
+        "4": ("Fat", "fat_100g"),
+        "5": ("Protein", "proteins_100g")
     }
-
-    label_map = {
-        "energy_kcal_100g": "Calories",
-        "sugars_100g": "Sugar",
-        "fat_100g": "Fat",
-        "salt_100g": "Salt",
-        "proteins_100g": "Protein",
-        "nutriscore_score": "Nutri-Score",
-        "nova_group": "NOVA group"
-    }
-
-    if choice not in field_map:
-        print("\nInvalid sorting option.")
-        return
-
-    field_name = field_map[choice]
-    limit = get_result_limit()
+    print("\n1. Calories\n2. Sugar\n3. Salt\n4. Fat\n5. Protein")
+    choice = ask_choice("Type a number: ", list(options))
+    limit = ask_number("How many results: ", 10, int, 1, 50)
+    label, field_name = options[choice]
     results = analyzer.sort_products_by_nutrition(field_name, limit)
 
-    print(f"\nTop {limit} products by {label_map[field_name]}")
-    print("=" * 50)
+    print(f"\nTop products by {label}:")
 
     for item in results:
-        product = item["product"]
-        value = item["value"]
-        countries = item["countries"]
-
-        print(f"{product.product_name} | {label_map[field_name]}: {round(value, 2)} | Countries: {', '.join(countries)}")
+        print(f"{item['product'].product_name} | {label}: {round(item['value'], 2)}")
 
 
-def show_country_report(analyzer):
-    country = input("Enter country name: ").strip()
-    rows = analyzer.get_country_report(country)
-    report = analyzer.format_trend_report(f"Country Report: {country}", rows)
+def show_trends(analyzer, trend_type):
+    """Show yearly country or region nutrition trends as console text."""
+    if trend_type == "country":
+        name = ask_text("Enter country name: ")
+        rows = analyzer.get_country_report(name)
+        title = f"Country trends: {name}"
+    else:
+        name = ask_text("Enter region name: ")
+        rows = analyzer.get_region_report(name)
+        title = f"Region trends: {name}"
 
-    print("\n" + report)
-
-
-def show_region_report(analyzer):
-    region = input("Enter region name: ").strip()
-    rows = analyzer.get_region_report(region)
-    report = analyzer.format_trend_report(f"Region Report: {region}", rows)
-
-    print("\n" + report)
+    print("\n" + analyzer.format_trend_report(title, rows))
 
 
-def export_full_report(data_manager, analyzer):
-    report = analyzer.generate_full_report()
+def ask_yes_no(prompt):
+    """Keep asking until the user enters yes or no."""
+    while True:
+        answer = ask_text(prompt, "no").lower()
 
-    data_manager.write_report(report)
-    data_manager.append_report_history("full_report")
+        if answer in ["yes", "y"]:
+            return True
+        if answer in ["no", "n", ""]:
+            return False
 
-    print("\nReport exported successfully.")
-    print("Check the reports folder.")
+        print("Please type yes or no.")
+
+
+def ask_date():
+    """Read a profile start date or use today's date."""
+    prompt = "Enter profile start date (YYYY-MM-DD), or press Enter for today: "
+    date_text = ask_text(prompt)
+
+    if not date_text:
+        return datetime.now().date()
+
+    try:
+        return datetime.strptime(date_text, "%Y-%m-%d").date()
+    except ValueError:
+        print("Invalid date. Using today's date.")
+        return datetime.now().date()
+
+
+def create_profile(data_manager):
+    """Ask for user preferences and save them as a profile."""
+    profile = {
+        "profile_name": ask_text("Enter profile name: ") or "Default profile",
+        "country": ask_text("Enter country, or leave blank: "),
+        "region": ask_text("Enter region, or leave blank: "),
+        "start_date": ask_date(),
+        "max_sugar": ask_number("Maximum sugar per 100g: ", 22.5),
+        "include_ultra_processed": ask_yes_no("Include ultra-processed products? (yes/no): "),
+        "result_limit": ask_number("How many results: ", 10, int, 1, 50)
+    }
+
+    if data_manager.save_profile(profile):
+        print("Profile saved.")
+        return profile
+
+    return None
+
+
+def select_profile(data_manager):
+    """Display saved profiles and return the profile chosen by the user."""
+    profiles = data_manager.read_profiles()
+
+    if not profiles:
+        print("No saved profiles.")
+        return None
+
+    print("\nSaved profiles:")
+
+    for number, profile in enumerate(profiles, start=1):
+        print(f"{number}. {profile['profile_name']}")
+
+    choices = [str(number) for number in range(len(profiles) + 1)]
+    choice = ask_choice("Choose profile number (0 to cancel): ", choices)
+    return None if choice == "0" else profiles[int(choice) - 1]
+
+
+def create_or_select_profile(data_manager):
+    """Open the small profile menu and create or select a profile."""
+    print("\n1. Create profile\n2. Select profile\n0. Cancel")
+    choice = ask_choice("Type a number: ", ["0", "1", "2"])
+
+    if choice == "1":
+        return create_profile(data_manager)
+    if choice == "2":
+        return select_profile(data_manager)
+
+    return None
+
+
+def search_with_selected_profile(data_manager, analyzer, profile):
+    """Search for products that match the selected user profile."""
+    if profile is None:
+        print("Please create or select a profile first.")
+        return
+
+    search_text = ask_text("Enter product name, brand, or category: ")
+    results = analyzer.find_products_for_profile(search_text, profile)
+    show_product_results(results)
+    best_product, average_risk = tracking_result(results)
+
+    data_manager.save_tracking_row(
+        "profile search",
+        selected_profile_name(profile),
+        search_text,
+        best_product,
+        "",
+        len(results),
+        best_product,
+        average_risk
+    )
+
+
+def make_tracking_graphs(history, check_counts):
+    """Create the check-type and risk-score tracking graph files."""
+    try:
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.dates as mdates
+        import matplotlib.pyplot as plt
+    except ImportError:
+        return False
+
+    check_types = ["normal search", "comparison", "warning check", "profile search"]
+    CHECK_TYPE_CHART_FILE.parent.mkdir(exist_ok=True)
+
+    plt.figure(figsize=(8, 5))
+    plt.bar(check_types, [check_counts[name] for name in check_types])
+    plt.title("Checks used by the user")
+    plt.ylabel("Number of saved checks")
+    plt.xticks(rotation=15)
+    plt.tight_layout()
+    plt.savefig(CHECK_TYPE_CHART_FILE)
+    plt.close()
+
+    # Keep matched timestamp/risk pairs so one damaged CSV row cannot stop a graph.
+    dates = []
+    risk_scores = []
+
+    for row in history:
+        try:
+            saved_date = datetime.strptime(row["timestamp"], "%Y-%m-%d %H:%M:%S")
+            risk_score = float(row["average_risk_score"])
+        except (ValueError, TypeError):
+            continue
+
+        dates.append(saved_date)
+        risk_scores.append(risk_score)
+
+    plt.figure(figsize=(8, 5))
+    plt.plot(dates, risk_scores, marker="o")
+    plt.title("Average risk score over time")
+    plt.xlabel("Date")
+    plt.ylabel("Average risk score")
+    axis = plt.gca()
+    axis.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m-%d\n%H:%M:%S"))
+    if dates and min(dates) == max(dates):
+        axis.set_xlim(dates[0] - timedelta(minutes=1), dates[0] + timedelta(minutes=1))
+    plt.xticks(rotation=25)
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig(RISK_SCORE_CHART_FILE)
+    plt.close()
+    return True
+
+
+def show_tracking_over_time(data_manager):
+    """Print tracking summaries and create the two tracking graphs."""
+    history = data_manager.read_tracking_history()
+
+    if not history:
+        print("\nNo tracking history yet. Use search, comparison, warning check, or profile search first.")
+        return
+
+    check_types = ["normal search", "comparison", "warning check", "profile search"]
+    profile_counts = defaultdict(Counter)
+    check_counts = Counter()
+    profile_risks = defaultdict(list)
+
+    # Build totals by profile and collect risk values for profile averages.
+    for row in history:
+        profile = row.get("profile_name") or "Without profile"
+        check_type = row.get("check_type", "")
+        profile_counts[profile][check_type] += 1
+        check_counts[check_type] += 1
+
+        try:
+            profile_risks[profile].append(float(row["average_risk_score"]))
+        except (ValueError, TypeError):
+            pass
+
+    print("\nCHECK TYPE TRACKER")
+    print(f"{'Profile':<20}{'Normal search':>15}{'Comparison':>13}{'Warning check':>15}{'Profile search':>16}{'Total':>8}")
+
+    # Nested loop: each profile is compared with every tracked check type.
+    for profile, counts in profile_counts.items():
+        values = []
+
+        for check_type in check_types:
+            values.append(counts[check_type])
+
+        print(
+            f"{profile:<20}{values[0]:>15}{values[1]:>13}"
+            f"{values[2]:>15}{values[3]:>16}{sum(values):>8}"
+        )
+
+    print()
+
+    for check_type in check_types:
+        count = check_counts[check_type]
+        print(f"{check_type:<15} | {'#' * count} {count}")
+
+    print("\nRISK SCORE TRACKER")
+    print("Saved checks by date")
+    print("Each row is one saved check. The date shows when it happened.")
+    print(f"{'No.':<5}{'Date and time':<20}{'Profile':<20}{'Check type':<17}{'Average risk':>13}")
+
+    for number, row in enumerate(history[-10:], start=1):
+        print(
+            f"{number:<5}{row.get('timestamp', '')[:16]:<20}"
+            f"{row.get('profile_name', ''):<20}{row.get('check_type', ''):<17}"
+            f"{row.get('average_risk_score', ''):>13}"
+        )
+
+    print(f"\n{'Profile':<20}{'Average risk score':>20}")
+
+    for profile, risks in profile_risks.items():
+        average = round(sum(risks) / len(risks), 2) if risks else 0
+        print(f"{profile:<20}{average:>20}")
+
+    start_dates = {
+        profile["profile_name"]: profile.get("start_date", "")
+        for profile in data_manager.read_profiles()
+    }
+    print("\nProfile start dates:")
+
+    for profile in profile_counts:
+        print(f"{profile:<20}{start_dates.get(profile) or '-'}")
+
+    if make_tracking_graphs(history, check_counts):
+        print("\nEach point in the risk graph is one saved check. The date shows when it happened.")
+        print("\nGraphs saved:")
+        print("reports/check_type_tracking_bar_chart.png")
+        print("reports/risk_score_tracking_line_chart.png")
+    else:
+        print("\nMatplotlib is not installed. Tracking tables are still available.")
 
 
 def main():
-    data_manager = None
+    """Run the console menu until the user chooses Exit."""
+    data_manager = DataManager()
     analyzer = None
     selected_profile = None
 
     while True:
-        display_menu()
-        # The menu choice is also string input from the console.
-        choice = input("Enter your choice: ").strip()
+        show_menu()
+        choice = ask_menu_choice()
 
+        # A final safety net keeps unexpected bad input from ending the program.
         try:
-            if choice == "1":
-                data_manager, analyzer = load_program_data()
-
-            elif choice == "2":
-                # Menu features need loaded data before using the analyzer.
-                if analyzer is None:
-                    print("\nPlease load the data first.")
-                else:
-                    search_products(analyzer)
-
-            elif choice == "3":
-                if analyzer is None:
-                    print("\nPlease load the data first.")
-                else:
-                    compare_products(analyzer)
-
-            elif choice == "4":
-                if analyzer is None:
-                    print("\nPlease load the data first.")
-                else:
-                    show_health_warning_report(analyzer)
-
-            elif choice == "5":
-                if analyzer is None:
-                    print("\nPlease load the data first.")
-                else:
-                    sort_products(analyzer)
-
-            elif choice == "6":
-                if analyzer is None:
-                    print("\nPlease load the data first.")
-                else:
-                    show_country_report(analyzer)
-
-            elif choice == "7":
-                if analyzer is None:
-                    print("\nPlease load the data first.")
-                else:
-                    show_region_report(analyzer)
-
-            elif choice == "8":
-                if analyzer is None or data_manager is None:
-                    print("\nPlease load the data first.")
-                else:
-                    selected_profile = manage_profile(data_manager)
-
-            elif choice == "9":
-                if analyzer is None or data_manager is None:
-                    print("\nPlease load the data first.")
-                else:
-                    find_products_for_selected_profile(analyzer, selected_profile)
-
-            elif choice == "10":
-                # Export needs both the analyzer and data manager.
-                if analyzer is None or data_manager is None:
-                    print("\nPlease load the data first.")
-                else:
-                    export_full_report(data_manager, analyzer)
-
-            elif choice == EXIT_OPTION:
-                print("\nThank you for using Smart Food Nutrition Analyzer. Goodbye!")
+            if choice == 0:
+                print("\nGoodbye!")
                 break
+            if choice == 1:
+                data_manager, analyzer = load_all_food_data()
+            elif choice == 10:
+                show_tracking_over_time(data_manager)
+            elif not data_is_loaded(analyzer):
+                continue
+            elif choice == 2:
+                search_and_show_products(data_manager, analyzer, selected_profile)
+            elif choice == 3:
+                compare_two_products(data_manager, analyzer, selected_profile)
+            elif choice == 4:
+                check_one_product_warnings(data_manager, analyzer, selected_profile)
+            elif choice == 5:
+                show_top_nutrition_products(analyzer)
+            elif choice == 6:
+                show_trends(analyzer, "country")
+            elif choice == 7:
+                show_trends(analyzer, "region")
+            elif choice == 8:
+                profile = create_or_select_profile(data_manager)
 
-            else:
-                print("\nInvalid choice. Please enter a number from the menu.")
-        except Exception as error:
-            print("\nSomething went wrong, but the program will continue.")
-            print(f"Error: {error}")
+                if profile is not None:
+                    selected_profile = profile
+            elif choice == 9:
+                search_with_selected_profile(data_manager, analyzer, selected_profile)
+        except Exception:
+            print("\nSomething went wrong. Please try again.")
 
 
 if __name__ == "__main__":

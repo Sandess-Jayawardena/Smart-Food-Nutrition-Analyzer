@@ -1,28 +1,22 @@
 from base_record import BaseRecord
 
-# FoodProduct inherits the shared code field from BaseRecord.
 class FoodProduct(BaseRecord):
+    """Store searchable product details linked by a shared product code."""
 
-    def __init__(self, code, product_name, brands, main_category, created_year):
+    def __init__(self, code, product_name, brands, main_category):
+        """Create one food product record."""
         super().__init__(code)
-        self.product_name = product_name
-        self.brands = brands
-        self.main_category = main_category 
-        self.created_year = self.to_int(created_year)
-
-    def to_int(self, value):
-        try:
-            if value == "":
-                return None
-            return int(value)
-        except ValueError:
-            return None
+        self.product_name = product_name or ""
+        self.brands = brands or ""
+        self.main_category = main_category or ""
         
-    # Check product name, brand, and category for the search text.
     def matches_search(self, search_text):
+        """Check whether the product matches search text."""
         search_text = search_text.lower()
 
-        return(search_text in self.product_name.lower() or search_text in self.brands.lower() or search_text in self.main_category.lower() )
-
-    def display_product(self):
-        return f"{self.code} | {self.product_name} | {self.brands} | {self.main_category} | {self.created_year}"
+        # A match in any of the three user-visible text fields is accepted.
+        return (
+            search_text in self.product_name.lower()
+            or search_text in self.brands.lower()
+            or search_text in self.main_category.lower()
+        )

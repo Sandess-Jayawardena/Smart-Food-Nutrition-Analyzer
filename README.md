@@ -1,32 +1,46 @@
 # Smart Food Nutrition Analyzer
 
-A Python console app for searching and comparing food products using Open Food Facts nutrition data.
-
-## Features
-
-* Search products by name, brand, or category
-* Compare two products by product code
-* Show health warnings for sugar, fat, salt, calories, and ultra-processing
-* Sort products by calories, sugar, fat, salt, protein, Nutri-Score, or NOVA group
-* View country and region nutrition trends
-* Export a text report
-
-## Data
-
-The app uses cleaned CSV files based on Open Food Facts data. The data includes product details, nutrition values, countries, regions, and yearly trend summaries.
+Smart Food Nutrition Analyzer is a Python console app that helps users make healthier food choices. It searches products, compares nutrition risk scores, uses personal nutrition profiles, saves decision reports, tracks report history, shows country and region trends, and creates trend line charts.
 
 ## Run
 
 ```powershell
-py -3 main.py
+py main.py
 ```
 
-Load the data first from the menu, then choose the feature you want to use.
+Load the food dataset from the main menu before using the analysis features.
 
-## Output
+## Matplotlib
 
-Exported reports are saved in the `reports` folder.
+Install Matplotlib to generate trend line charts:
 
-## Note
+```powershell
+py -3 -m pip install matplotlib
+```
 
-Open Food Facts is crowdsourced, so some values may be missing or unusual. The program filters unrealistic values during sorting.
+## Main Features
+
+* Product search
+* Product comparison
+* Health warning report
+* Risk score and risk level
+* User nutrition profiles
+* Profile-based product finder
+* Nutrition decision report
+* Report history tracking
+* Country and region trends
+* Matplotlib trend chart
+
+## Files Read
+
+The app reads the CSV files in the `data` folder for products, nutrition values, countries, regions, and yearly trends.
+
+## Files Written
+
+* `reports/profiles.csv`
+* `reports/report_history.csv`
+* `reports/nutrition_decision_report.txt`
+* `reports/trend_line_chart.png`
+
+
+Open Food Facts data is crowdsourced, so some nutrition values may be missing or unusual.

@@ -1,8 +1,6 @@
 class BaseRecord:
-    # Parent class for records that share a product code.
+    """Provide the shared product code used to connect project datasets."""
     
     def __init__(self, code):
+        """Store a cleaned product code."""
         self.code = str(code).strip()
-
-    def get_code(self):
-        return self.code

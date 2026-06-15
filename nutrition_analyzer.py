@@ -1,27 +1,28 @@
-class NutritionAnalyzer:
+VALID_RANGES = {
+    "energy_kcal_100g": (0, 900),
+    "sugars_100g": (0, 100),
+    "fat_100g": (0, 100),
+    "salt_100g": (0, 100),
+    "proteins_100g": (0, 100)
+}
 
-    def __init__(self, products, nutrition_profiles, product_countries, country_regions, country_trends, region_trends,):
+class NutritionAnalyzer:
+    """Search, compare, filter, warn, and report loaded nutrition data."""
+
+    def __init__(self, products, nutrition_profiles, product_countries, country_regions, country_trends, region_trends):
+        """Store loaded data and prepare lookup dictionaries."""
         self.products = products
         self.nutrition_profiles = nutrition_profiles
-        self.product_countries = product_countries
-        self.country_regions = country_regions
         self.country_trends = country_trends
         self.region_trends = region_trends
-        self.product_lookup = {}
-        self.nutrition_lookup = {}
+        # Lookup dictionaries avoid scanning every dataset for each menu action.
+        self.product_lookup = {product.code: product for product in self.products}
+        self.nutrition_lookup = {nutrition.code: nutrition for nutrition in self.nutrition_profiles}
+        self.region_lookup = {row["country"]: row["region"] for row in country_regions}
         self.country_lookup = {}
-        self.region_lookup = {}
-        self.create_lookups()
-    
-    def create_lookups(self):
-        # Lookup dictionaries give fast access instead of searching every list.
-        for product in self.products:
-            self.product_lookup[product.code] = product
 
-        for nutrition in self.nutrition_profiles:
-            self.nutrition_lookup[nutrition.code] = nutrition   
-
-        for row in self.product_countries:
+        # One product can appear in several countries, so each code stores a list.
+        for row in product_countries:
             code = row["code"]
             country = row["country"]
 
@@ -31,59 +32,23 @@ class NutritionAnalyzer:
             if country not in self.country_lookup[code]:
                 self.country_lookup[code].append(country)
 
-        for row in self.country_regions:
-            country = row["country"]
-            region = row["region"]
-            self.region_lookup[country] = region
-
-    def get_product_by_code(self, code):
+    def get_full_product_details(self, code):
+        """Combine product, nutrition, and country information."""
         code = str(code).strip()
-
-        if code in self.product_lookup:
-            return self.product_lookup[code]
-
-        return None
-
-    def get_nutrition_by_code(self, code):
-        code = str(code).strip()
-
-        if code in self.nutrition_lookup:
-            return self.nutrition_lookup[code]
-
-        return None
-
-    def get_countries_for_product(self, code):
-        code = str(code).strip()
-
-        if code in self.country_lookup:
-            return self.country_lookup[code]
-        
-        return []
-
-    def get_combined_product_info(self, code):
-        # Product code links product details, nutrition values, and countries.
-        product = self.get_product_by_code(code)
-        nutrition = self.get_nutrition_by_code(code)
-        countries = self.get_countries_for_product(code)
+        product = self.product_lookup.get(code)
+        nutrition = self.nutrition_lookup.get(code)
 
         if product is None or nutrition is None:
             return None
 
-        return {"product": product, "nutrition": nutrition, "countries": countries}
+        return {"product": product, "nutrition": nutrition, "countries": self.country_lookup.get(code, [])}
 
     def count_combined_products(self):
-        """
-
-        """
-        count = 0
-
-        for product in self.products:
-            if product.code in self.nutrition_lookup:
-                count = count + 1
-
-        return count
+        """Count products that also have nutrition information."""
+        return sum(1 for product in self.products if product.code in self.nutrition_lookup)
     
     def search_products(self, search_text, limit=10):
+        """Search products and return combined matching records."""
         search_text = str(search_text).strip()
 
         results = []
@@ -93,7 +58,7 @@ class NutritionAnalyzer:
 
         for product in self.products:
             if product.matches_search(search_text):
-                combined_info = self.get_combined_product_info(product.code)
+                combined_info = self.get_full_product_details(product.code)
 
                 if combined_info is not None:
                     results.append(combined_info)
@@ -103,141 +68,79 @@ class NutritionAnalyzer:
 
         return results
 
+    def get_profile_number(self, profile, field_name, default_value, number_type):
+        """Read a numeric profile setting with a safe default."""
+        try:
+            return number_type(profile.get(field_name, default_value))
+        except (ValueError, TypeError):
+            return default_value
+
+    def matches_profile_location(self, countries, country_filter, region_filter):
+        """Check whether product countries match profile location settings."""
+        normalized_countries = [country.strip().lower() for country in countries]
+
+        if country_filter and country_filter not in normalized_countries:
+            return False
+
+        if region_filter:
+            regions = [self.region_lookup.get(country, "").strip().lower() for country in countries]
+
+            if region_filter not in regions:
+                return False
+
+        return True
+
     def find_products_for_profile(self, search_text, profile):
         """Find products that match a saved user nutrition profile."""
         if not isinstance(profile, dict):
             profile = {}
 
-        try:
-            max_sugar = float(profile.get("max_sugar", 100))
-        except (ValueError, TypeError):
-            max_sugar = 100
-
-        try:
-            result_limit = int(profile.get("result_limit", 10))
-        except (ValueError, TypeError):
-            result_limit = 10
-
-        if result_limit < 1:
-            result_limit = 10
-
+        max_sugar = self.get_profile_number(profile, "max_sugar", 100, float)
+        result_limit = self.get_profile_number(profile, "result_limit", 10, int)
+        result_limit = result_limit if result_limit > 0 else 10
         country_filter = str(profile.get("country", "") or "").strip().lower()
         region_filter = str(profile.get("region", "") or "").strip().lower()
-        include_ultra_processed = str(profile.get("include_ultra_processed", "no") or "no").strip().lower()
-        search_results = self.search_products(search_text, len(self.products))
+        include_ultra_processed = bool(profile.get("include_ultra_processed", False))
         filtered_results = []
 
-        for item in search_results:
+        # Apply every profile rule before sorting the remaining products by risk.
+        for item in self.search_products(search_text, len(self.products)):
             nutrition = item["nutrition"]
-            countries = item["countries"]
 
-            if country_filter != "":
-                country_match = False
-
-                for country in countries:
-                    if country.strip().lower() == country_filter:
-                        country_match = True
-
-                if not country_match:
-                    continue
-
-            if region_filter != "":
-                region_match = False
-
-                for country in countries:
-                    region = self.region_lookup.get(country, "")
-
-                    if region.strip().lower() == region_filter:
-                        region_match = True
-
-                if not region_match:
-                    continue
-
+            if not self.matches_profile_location(item["countries"], country_filter, region_filter):
+                continue
             if nutrition.sugars_100g is None or nutrition.sugars_100g > max_sugar:
                 continue
-
-            if include_ultra_processed == "no" or include_ultra_processed == "false":
-                if nutrition.is_ultra_processed():
-                    continue
+            if not include_ultra_processed and nutrition.is_ultra_processed():
+                continue
 
             filtered_results.append(item)
 
-        filtered_results.sort(key=lambda item: item["nutrition"].calculate_risk_score())
+        return sorted(filtered_results, key=lambda item: item["nutrition"].calculate_food_risk_score())[:result_limit]
 
-        return filtered_results[:result_limit]
-
-    def compare_products(self, first_code, second_code):
-        """Compare two products by loading their combined product information."""
-        first_product_info = self.get_combined_product_info(first_code)
-        second_product_info = self.get_combined_product_info(second_code)
-
-        if first_product_info is None or second_product_info is None:
-            return None
-
-        return {"first": first_product_info, "second": second_product_info}
-
-    def get_health_warning_report(self, code):
-        """Create a readable health warning report for one selected product."""
-        combined_info = self.get_combined_product_info(code)
-
-        if combined_info is None:
-            return None
-
-        product = combined_info["product"]
-        nutrition = combined_info["nutrition"]
-        countries = combined_info["countries"]
-        warnings = nutrition.get_health_warnings()
-
-        report_lines = []
-
-        report_lines.append("HEALTH WARNING REPORT")
-        report_lines.append("=" * 40)
-        report_lines.append(product.display_product())
-        report_lines.append(nutrition.display_nutrition())
-        report_lines.append(f"Countries: {', '.join(countries)}")
-        report_lines.append(f"Risk score: {nutrition.calculate_risk_score()}")
-        report_lines.append(f"Risk level: {nutrition.get_risk_level()}")
-        report_lines.append("")
-        report_lines.append("Warnings:")
-
-        for warning in warnings:
-            report_lines.append(f"- {warning}")
-
-        return "\n".join(report_lines)        
+    def format_trend_row(self, row):
+        """Format one country or region trend row."""
+        return (
+            f"{row.get('year')} | Products: {row.get('product_count')} | "
+            f"Avg kcal: {row.get('avg_kcal_100g')} | "
+            f"Avg sugar: {row.get('avg_sugars_100g')}g | "
+            f"Avg salt: {row.get('avg_salt_100g')}g | "
+            f"Ultra-processed: {row.get('ultra_processed_percentage')}%"
+        )
 
     def is_valid_nutrition_value(self, field_name, value):
-        if value is None:
-            return False
-
-        # Filter unrealistic nutrition values and likely data-entry mistakes.
-        valid_ranges = {
-            "energy_kcal_100g": (0, 900),
-            "sugars_100g": (0, 100),
-            "fat_100g": (0, 100),
-            "salt_100g": (0, 100),
-            "proteins_100g": (0, 100),
-            "nutriscore_score": (-15, 40),
-            "nova_group": (1, 4),
-        }
-
-        if field_name not in valid_ranges:
-            return False
-
-        minimum_value, maximum_value = valid_ranges[field_name]
-
-        return minimum_value <= value <= maximum_value    
+        """Check whether a nutrition value is within a realistic range."""
+        return value is not None and field_name in VALID_RANGES and VALID_RANGES[field_name][0] <= value <= VALID_RANGES[field_name][1]
 
     def sort_products_by_nutrition(self, field_name, limit=10):
+        """Return products sorted by one nutrition field."""
         combined_results = []
-
-        allowed_fields = [
-            "energy_kcal_100g", "sugars_100g", "fat_100g", "salt_100g", "proteins_100g", "nutriscore_score", "nova_group"]
-
-        if field_name not in allowed_fields:
+        if field_name not in VALID_RANGES:
             return combined_results
 
+        # Missing and unrealistic values are left out of the ranking.
         for product in self.products:
-            nutrition = self.get_nutrition_by_code(product.code)
+            nutrition = self.nutrition_lookup.get(product.code)
 
             if nutrition is None:
                 continue
@@ -249,115 +152,33 @@ class NutritionAnalyzer:
                     "product": product,
                     "nutrition": nutrition,
                     "value": value,
-                    "countries": self.get_countries_for_product(product.code)
+                    "countries": self.country_lookup.get(product.code, [])
                 })
 
-        combined_results.sort(key=lambda item: item["value"], reverse=True)
+        return sorted(combined_results, key=lambda item: item["value"], reverse=True)[:limit]
 
-        return combined_results[:limit]
+    def filter_trend_rows(self, rows, field_name, name):
+        """Filter trend rows by country or region name."""
+        name = str(name).strip().lower()
+
+        if name == "":
+            return []
+
+        return [row for row in rows if row.get(field_name, "").strip().lower() == name]
 
     def get_country_report(self, country_name):
-        # Country trend reports filter trend rows by country name.
-        country_name = str(country_name).strip().lower()
-        results = []
-
-        if country_name == "":
-            return results
-
-        for row in self.country_trends:
-            row_country = row.get("country", "").strip().lower()
-
-            if row_country == country_name:
-                results.append(row)
-
-        return results
+        """Return trend rows for one country."""
+        return self.filter_trend_rows(self.country_trends, "country", country_name)
 
     def get_region_report(self, region_name):
-        # Region trend reports filter trend rows by region name.
-        region_name = str(region_name).strip().lower()
-        results = []
+        """Return trend rows for one region."""
+        return self.filter_trend_rows(self.region_trends, "region", region_name)
 
-        if region_name == "":
-            return results
-
-        for row in self.region_trends:
-            row_region = row.get("region", "").strip().lower()
-
-            if row_region == region_name:
-                results.append(row)
-
-        return results
-    
     def format_trend_report(self, title, rows):
+        """Format country or region trend rows as text."""
         if len(rows) == 0:
             return "No trend data found."
 
-        report_lines = []
-
-        report_lines.append(title)
-        report_lines.append("=" * len(title))
-
-        for row in rows:
-            report_lines.append(                
-                f"{row.get('year')} | Products: {row.get('product_count')} | "
-                f"Avg kcal: {row.get('avg_kcal_100g')} | "
-                f"Avg sugar: {row.get('avg_sugars_100g')}g | "
-                f"Avg salt: {row.get('avg_salt_100g')}g | "
-                f"Ultra-processed: {row.get('ultra_processed_percentage')}%")
-        
-        return "\n".join(report_lines)
-
-    def generate_full_report(self):
-        report_lines = []
-
-        report_lines.append("SMART FOOD NUTRITION ANALYZER REPORT")
-        report_lines.append("=" * 45)
-        report_lines.append(f"Total products loaded: {len(self.products)}")
-        report_lines.append(f"Total nutrition profiles loaded: {len(self.nutrition_profiles)}")
-        report_lines.append("")
-
-        sections = [("sugars_100g", "Top High-Sugar Products", "Sugar", "g"), ("energy_kcal_100g", "Top High-Calorie Products", "Calories", " kcal"), ("salt_100g", "Top High-Salt Products", "Salt", "g"), ("proteins_100g", "Top High-Protein Products", "Protein", "g")]
-
-        # Nested loop: each section has several top products inside it.
-        for field_name, title, label, unit in sections:
-            report_lines.append(title)
-            report_lines.append("=" * len(title))
-
-            results = self.sort_products_by_nutrition(field_name, limit=5)
-
-            for item in results:
-                product = item["product"]
-                value = item["value"]
-                countries = item["countries"]
-                report_lines.append(f"{product.product_name} | {label}: {round(value, 2)}{unit} | Countries: {', '.join(countries)}")
-
-            report_lines.append("")
-
-        selected_countries = ["Austria", "Sri Lanka"]
-
-        for country in not selected_countries:
-            rows = self.get_country_report(country)
-            recent_rows = rows[-5:]
-            report_lines.append(self.format_trend_report(f"Country Trend: {country}", recent_rows))
-            report_lines.append("")
-
-        regions = []
-
-        for row in self.region_trends:
-            region = row.get("region", "")
-
-            if region != "" and region not in regions:
-                regions.append(region)
-
-        regions.sort()
-
-        for region in regions:
-            rows = self.get_region_report(region)
-            recent_rows = rows[-5:]
-            report_lines.append(self.format_trend_report(f"Region Trend: {region}", recent_rows))
-            report_lines.append("")
-
-        report_lines.append("Note:")
-        report_lines.append("The data comes from Open Food Facts. Because the source is crowdsourced, some values may contain outliers or entry mistakes.")
-
+        report_lines = [title, "=" * len(title)]
+        report_lines.extend(self.format_trend_row(row) for row in rows)
         return "\n".join(report_lines)
